@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+ <meta charset="utf-8">
+ <title>Vue-js | Django | Crud App</title>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <meta name="description" content="A simple crud app made with the vue js and django">
+
+<meta name="keywords" content="vuejs, django, crudapp, restapi">
+ <!-- bootstap -->
+ <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin=”anonymous”>
+ <!-- boostrap css -->
+
+</head>
+
+<body>
+
+<!-- bootrtap js files -->
+ <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+ <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+ 
+ <!-- vue.js files-->
+ <script src="https://cdn.jsdelivr.net/npm/vue@2.5.13/dist/vue.js"></script>
+ <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.3.5"></script>
+ <div id="starting">
+   <div class="container">
+	<div class="row">
+	  <h1>List of Projects<button type="button" class="btn btn-success" data-toggle="modal" data-target="#addProjectModal">Add Project</button></h1>
+	  <table class="table">
+	    <thead><tr>
+		<th>Name</th>
+		<th>Description</th>
+		<th>Action</th>
+	    </tr></thead>
+	    <tbody>
+		<tr v-for="project in projects">
+		  <td>${project.name}</td>
+		  <td>${project.description}</td>
+		  <td>
+			<button class="btn btn-info" v-on:click="getProject(project.id)">Edit</button>
+			<button class="btn btn-danger" v-on:click="deleteProject(project.id)">Delete</button>
+		  </td>
+		</tr>
+	    </tbody>
+	  </table>
+	  <!--Add Project modal -->
+	  <div class="modal fade" id="addProjectModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+	    <div class="modal-dialog" role="document">
+		<div class="modal-content">
+		  <div class="modal-header"><h5 class="modal-title" id="exampleModalLongTitle">Add Project</h5><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>
+		<form v-on:submit.prevent="addProject()">
+		  <div class="modal-body">
+		    <div class="form-group">
+		      <label for="project_name">Project name</label>
+		      <input type="test" class="form-control" id="project_name" placeholder="Enter prject name" v-model="newProject.name" required="required" />
+		    </div>
+		    <div class="form-group">
+		      <label for="project_description">Project description</label>
+		      <textarea class="form-control" id="project_description" placeholder="Enter Project description" v-model="newProject.description" required="required" rows="3"></textarea>
+		    </div>
+		  </div>
+		  <div class="modal-footer"><button tpe="submit" class="btn btn-primary">Save</button></div>
+		</form>
+	    </div>
+	  </div>
+        </div>
+	<!--Edit Project modal -->
+        <div class="modal fade" id="editProjectModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header"><h5 class="modal-title" id="exampleModalLongTitle">Edit Project</h5><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>
+                <form v-on:submit.prevent="updateProject()">
+                  <div class="modal-body">
+                    <div class="form-group">
+                      <label for="project_name">Project name</label>
+                      <input type="test" class="form-control" id="project_name" placeholder="Enter prject name" v-model="currentProject.name" required="required" />
+                    </div>
+                    <div class="form-group">
+                      <label for="project_description">Project description</label>
+                      <textarea class="form-control" id="project_description" placeholder="Enter Project description" v-model="currentProject.description" required="required" rows="3"></textarea>
+                    </div>
+                  </div>
+                  <div class="modal-footer"><button tpe="submit" class="btn btn-primary">Save Changes</button></div>
+                </form>
+            </div>
+          </div>
+	</div>
+   </div>
+   <div class="loading" v-if="loading===true">Loading</div>
+ </div>
+</div>
+
+<script type="text/javascript">
+ new Vue({
+   el: '#starting',
+   delimiters: ['${','}'],
+   data: {
+   projects: [],
+   loading: false,
+   currentProject: {},
+   message: null,
+   newProject: { 'project_name':null, 'description': null },
+ },
+ mounted: function() {
+      this.getProjects();
+},
+ methods: {
+   getProjects: function(){
+      this.loading=true;
+      this.$http.get('/api/v1/project/')
+          .then(function(response){
+                   this.projects=response.data;
+                   this.loading=false;
+           })
+           .catch(function(err){
+                   this.loading=false;
+                   console.log(err);
+           });
+   },
+   getProject: function(id){
+      this.loading =true;
+      this.$http.get(`/api/v1/project/${id}/`)
+	  .then(function(response){
+		this.currentProject = response.data;
+		$("#editProjectModal").modal("show");
+		this.loading=false;
+	  })
+	  .catch(function(err){
+                   this.loading=false;
+                   console.log(err);
+           });
+   },
+   addProject: function(){
+      this.loading = true;
+      this.$http.post('/api/v1/project/',this.newProject)
+	  .then(function(response){
+		this.loading = false;
+		this.getProjects();
+	  })
+	  .catch(function(err){
+                   this.loading=false;
+                   console.log(err);
+           });
+   },
+   updateProject: function(){
+	this.loading = true;
+	this.$http.put(`/api/v1/project/${this.currentProject.id}/`,this.currentProject)
+	    .then(function(response){
+		this.loading=false;
+		this.currentProject=response.data;
+		this.getProjects();
+	    })
+	    .catch(function(err){
+		this.loading = false;
+		console.log(err);
+	    });
+   },
+   deleteProject: function(id){
+	this.loading = true;
+	this.$http.delete(`/api/v1/project/${id}/`)
+	    .then(function(response){
+		this.loading = false;
+		this.getProjects();
+	    })
+	    .catch(function(err){
+		this.loading = false;
+		console.log(err);
+	    });
+   }
+}
+ });
+ </script>
+</body>
+</html>
+
